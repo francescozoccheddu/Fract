@@ -3,11 +3,16 @@ package com.francescoz.fract.engine;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AnimationUtils;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.francescoz.fract.R;
@@ -47,8 +52,18 @@ public abstract class FractEngine {
         surface = new Surface(context, config.allowLowPrecisionColors, config.requireTransparentSurface);
     }
 
-    private static final void splash(Context context) {
-        Toast.makeText(context, R.string.splash, Toast.LENGTH_LONG).show();
+    private static final void splash(final Context context) {
+        Toast t = new Toast(context);
+        LinearLayout layout = (LinearLayout) LayoutInflater.from(context).inflate(R.layout.splash, null);
+        final View icon = layout.findViewById(R.id.splash_icon);
+        icon.post(new Runnable() {
+            @Override
+            public void run() {
+                icon.startAnimation(AnimationUtils.loadAnimation(context, R.anim.splash_icon));
+            }
+        });
+        t.setView(layout);
+        t.show();
     }
 
     public static boolean isSupported(Context context) {
@@ -104,6 +119,57 @@ public abstract class FractEngine {
     }
 
     protected abstract FractResourcesDef createResources();
+
+    public static final class Test extends FractEngine {
+
+        private final Context context;
+        private final FractSprite sprite;
+
+        public Test(Context context) {
+            super(context, new Config());
+            this.context = context;
+            sprite = new FractSprite();
+            sprite.drawableKey = "logo";
+            sprite.transform = new FractTransform();
+            FractScreen screen = new FractScreen() {
+
+
+                @Override
+                protected void render(Drawer drawer, float deltaTime) {
+                    sprite.transform.rotation += deltaTime * 90;
+                    drawer.draw(sprite);
+                }
+
+                @Override
+                protected void hide() {
+
+                }
+
+                @Override
+                protected void show() {
+                    sprite.transform.rotation = 0;
+                }
+            };
+            screen.clearColor.set(FractColor.DARK_GRAY);
+            screen.viewport.horizontalOrigin = FractOrigin.CENTER;
+            screen.viewport.verticalOrigin = FractOrigin.CENTER;
+            screen.viewport.fixedSize = 2;
+            setScreen(screen);
+        }
+
+        public static FractResourcesDef loadDefaultDrawable(Context context, String drawableKey) {
+            final BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inScaled = false;
+            Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.fract_logo, options);
+            FractResourcesDef.Drawable drawable = new FractResourcesDef.Drawable(0, bitmap, drawableKey);
+            return new FractResourcesDef(drawable);
+        }
+
+        @Override
+        protected FractResourcesDef createResources() {
+            return loadDefaultDrawable(context, "logo");
+        }
+    }
 
     public static final class Config {
 
