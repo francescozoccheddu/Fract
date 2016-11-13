@@ -11,6 +11,28 @@ public final class FractInput {
 
     public interface Listener {
 
+        Listener NULL_LISTENER = new Listener() {
+            @Override
+            public void onTouchDown(int pointer, float x, float y) {
+
+            }
+
+            @Override
+            public void onTouchMoved(int pointer, float x, float y) {
+
+            }
+
+            @Override
+            public void onTouchUp(int pointer, float x, float y) {
+
+            }
+
+            @Override
+            public void onTouchCancelled() {
+
+            }
+        };
+
         void onTouchDown(int pointer, float x, float y);
 
         void onTouchMoved(int pointer, float x, float y);

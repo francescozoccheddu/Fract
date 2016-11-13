@@ -26,30 +26,6 @@ dependencies {
 }
 
 ext {
-    bintrayRepo = 'snakelib'
-    bintrayName = 'snakelib'
-
-    publishedGroupId = 'com.giuseppesorce'
-    libraryName = 'snakelib'
-    artifact = 'snakelib'
-
-    libraryDescription = 'A library for tutorial'
-
-    siteUrl = 'https://github.com/giuseppesorce/snakelib'
-    gitUrl = 'https://github.com/giuseppesorce/snakelib.git'
-
-    libraryVersion = '1.0.0'
-
-    developerId = 'snakelib'
-    developerName = 'Giuseppe Sorce'
-    developerEmail = 'giuseppe.sorce@warpmobile.it'
-
-    licenseName = 'The Apache Software License, Version 2.0'
-    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-    allLicenses = ["Apache-2.0"]
-}
-
-ext {
     bintrayRepo = 'Fract'
     bintrayName = 'Fract'
 
@@ -59,7 +35,8 @@ ext {
 
     libraryDescription = 'Simple graphics library for Android'
 
-    gitUrl = 'https://www.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.git'
+    siteUrl = 'https://github.com/francescozoccheddu/Fract.git'
+    gitUrl = 'https://github.com/francescozoccheddu/Fract.git'
 
     libraryVersion = '0.1'
 

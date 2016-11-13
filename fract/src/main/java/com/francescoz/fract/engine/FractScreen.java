@@ -15,27 +15,26 @@ public abstract class FractScreen implements FractCoder.Codable {
     public final Viewport viewport;
     public FractInput.Listener inputListener;
 
-    public FractScreen(FractColor.RGB clearColor, Viewport viewport, FractInput.Dispatcher dispatcher) {
+    public FractScreen(FractColor.RGB clearColor, Viewport viewport, FractInput.Listener inputListener) {
         this.clearColor = clearColor;
         this.viewport = viewport;
-        this.inputListener = dispatcher;
+        this.inputListener = inputListener;
     }
 
-    public FractScreen(FractInput.Dispatcher inputDispatcher) {
-        this(new FractColor.RGB(), new Viewport(), inputDispatcher);
+    public FractScreen(FractInput.Listener inputListener) {
+        this(new FractColor.RGB(), new Viewport(), inputListener);
     }
 
-    public FractScreen(Viewport viewport, FractInput.Dispatcher inputDispatcher) {
-        this(new FractColor.RGB(), viewport, inputDispatcher);
+    public FractScreen(Viewport viewport, FractInput.Listener inputListener) {
+        this(new FractColor.RGB(), viewport, inputListener);
     }
 
-    public FractScreen(FractColor.RGB clearColor, FractInput.Dispatcher inputDispatcher) {
-        this(clearColor, new Viewport(), inputDispatcher);
+    public FractScreen(FractColor.RGB clearColor, FractInput.Listener inputListener) {
+        this(clearColor, new Viewport(), inputListener);
     }
 
     public FractScreen(FractColor.RGB clearColor, Viewport viewport) {
-        this.clearColor = clearColor;
-        this.viewport = viewport;
+        this(clearColor, viewport, FractInput.Listener.NULL_LISTENER);
     }
 
     public FractScreen(Viewport viewport) {

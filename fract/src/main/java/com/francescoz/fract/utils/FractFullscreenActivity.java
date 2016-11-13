@@ -19,7 +19,6 @@ public abstract class FractFullscreenActivity extends Activity {
         this.config = config;
     }
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,4 +36,5 @@ public abstract class FractFullscreenActivity extends Activity {
     }
 
     protected abstract FractResourcesDef createResources();
+
 }
