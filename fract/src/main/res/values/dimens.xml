@@ -1,6 +1,6 @@
 <resources>
     <dimen name="splash_text">12sp</dimen>
-    <dimen name="splash_background_corner">3dp</dimen>
+    <dimen name="splash_background_corner">2dp</dimen>
     <dimen name="splash_icon_padding">6dp</dimen>
     <dimen name="splash_icon">15dp</dimen>
     <dimen name="splash_icon_quad">5dp</dimen>
