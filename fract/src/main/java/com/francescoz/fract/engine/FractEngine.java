@@ -27,9 +27,7 @@ import com.francescoz.fract.utils.FractVec;
 import java.io.File;
 import java.io.IOException;
 
-import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
 public abstract class FractEngine {
@@ -184,46 +182,6 @@ public abstract class FractEngine {
         }
     }
 
-    private static final class EGLMatch {
-        private static final int SAMPLES_COST = 2;
-        private final int cost;
-        private final boolean halfBitsRGB;
-        private final EGLConfig config;
-
-        private EGLMatch(EGL10 egl, EGLDisplay display, EGLConfig config, boolean alpha) {
-            this.config = config;
-            int[] pointer = new int[1];
-            int r = get(egl, display, EGL10.EGL_RED_SIZE, pointer);
-            int g = get(egl, display, EGL10.EGL_GREEN_SIZE, pointer);
-            int b = get(egl, display, EGL10.EGL_BLUE_SIZE, pointer);
-            int a = get(egl, display, EGL10.EGL_ALPHA_SIZE, pointer);
-            int depth = get(egl, display, EGL10.EGL_DEPTH_SIZE, pointer);
-            int stencil = get(egl, display, EGL10.EGL_STENCIL_SIZE, pointer);
-            int luminance = get(egl, display, EGL10.EGL_LUMINANCE_SIZE, pointer);
-            int alphaMask = get(egl, display, EGL10.EGL_ALPHA_MASK_SIZE, pointer);
-            int samples = get(egl, display, EGL10.EGL_SAMPLES, pointer);
-            int uselessCost = depth + stencil + luminance + alphaMask + samples * SAMPLES_COST + (alpha ? 0 : a);
-            cost = r + g + b + uselessCost + (alpha ? a : 0);
-            halfBitsRGB = r <= 4 && g <= 4 && b <= 4 && a <= 4;
-            Log.d("FractEngine", "Supported Config:" +
-                    " r:" + r +
-                    " g:" + g +
-                    " b:" + b +
-                    " a:" + a +
-                    " dpt:" + depth +
-                    " stnc:" + stencil +
-                    " lum:" + luminance +
-                    " amsk:" + alphaMask +
-                    " smpls:" + samples +
-                    " cost:" + cost);
-        }
-
-        private int get(EGL10 egl, EGLDisplay display, int attrib, int[] pointer) {
-            egl.eglGetConfigAttrib(display, config, attrib, pointer);
-            return pointer[0];
-        }
-    }
-
     private static final class InputHandler implements View.OnTouchListener {
 
         private final Pointer[] pointers;
@@ -255,7 +213,7 @@ public abstract class FractEngine {
         }
 
         private void fire() {
-            FractInput.Listener listener = screen.inputListener;
+            FractInput.Listener listener = screen.inputListener != null ? screen.inputListener : FractInput.Listener.NULL_LISTENER;
             synchronized (pointers) {
                 for (int id = 0; id < FractInput.MAX_FINGERS; id++) {
                     Pointer p = pointers[id];
@@ -347,41 +305,14 @@ public abstract class FractEngine {
 
     private final class Surface extends GLSurfaceView {
 
-        private final boolean halfBits;
         private final InputHandler inputHandler;
+        private final boolean halfBits;
 
-        private Surface(Context context, final boolean halfColor, final boolean alpha) {
+        private Surface(Context context, boolean halfColor, boolean alpha) {
             super(context);
-            final boolean[] halfBitsPointer = new boolean[1];
-            setEGLConfigChooser(new EGLConfigChooser() {
-                @Override
-                public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
-                    int[] numConfigs = new int[1];
-                    egl.eglGetConfigs(display, null, 0, numConfigs);
-                    EGLConfig[] configs = new EGLConfig[numConfigs[0]];
-                    int minRGBA = halfColor ? 4 : 8;
-                    int attribs[] = new int[]{
-                            EGL10.EGL_RED_SIZE, minRGBA,
-                            EGL10.EGL_GREEN_SIZE, minRGBA,
-                            EGL10.EGL_BLUE_SIZE, minRGBA,
-                            EGL10.EGL_ALPHA_SIZE, alpha ? minRGBA : 0,
-                            EGL10.EGL_NONE
-                    };
-                    if (egl.eglChooseConfig(display, attribs, configs, configs.length, numConfigs)) {
-                        int configCount = numConfigs[0];
-                        EGLMatch c = new EGLMatch(egl, display, configs[0], alpha);
-                        for (int i = 1; i < configCount; i++) {
-                            EGLMatch e = new EGLMatch(egl, display, configs[i], alpha);
-                            if (e.cost < c.cost)
-                                c = e;
-                        }
-                        halfBitsPointer[0] = c.halfBitsRGB;
-                        return c.config;
-                    }
-                    throw new RuntimeException("Unsupported surface configuration");
-                }
-            });
-            halfBits = halfBitsPointer[0];
+            halfBits = halfColor;
+            int bits = halfColor ? 4 : 8;
+            setEGLConfigChooser(bits, bits, bits, alpha ? bits : 0, 0, 0);
             setEGLContextClientVersion(2);
             setRenderer(new Renderer());
             setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
@@ -439,7 +370,6 @@ public abstract class FractEngine {
                 time = actualTime;
             }
         }
-
 
     }
 
