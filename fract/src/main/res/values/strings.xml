@@ -1,5 +1,3 @@
 <resources>
-    <string name="app_name">Fract</string>
     <string name="splash"><b>Fract</b> Library v0.3 <i>(Alpha Build)</i>\nby <b>Francesco Zoccheddu</b>\nfz.francescoz@gmail.com</string>
-
 </resources>
