@@ -3,7 +3,14 @@ package com.francescoz.fract.engine;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.opengl.GLES20;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 
 import com.francescoz.fract.utils.FractCoder;
 
@@ -48,6 +55,54 @@ public class FractResourcesDef {
         Drawable[] array = new Drawable[drawableDefs.size()];
         drawableDefs.toArray(array);
         return array;
+    }
+
+    public void addFont(int priority, FontDrawableKeyChooser keyChooser, String chars, int size, Typeface typeface) {
+        addFont(priority, keyChooser, chars.toCharArray(), size, typeface);
+    }
+
+    public void addFont(int priority, FontDrawableKeyChooser keyChooser, char[] chars, int size, Typeface typeface) {
+        TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
+        paint.setColor(Color.WHITE);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrikeThruText(false);
+        paint.setStrokeWidth(0);
+        paint.setTypeface(typeface);
+        paint.setTextSize(size);
+        paint.setTextAlign(Paint.Align.LEFT);
+        for (char c : chars) {
+            String text = String.valueOf(c);
+            StaticLayout l = new StaticLayout(text, paint, size, Layout.Alignment.ALIGN_NORMAL, 0, 0, false);
+            String key = keyChooser.choose(c);
+            Bitmap bitmap = Bitmap.createBitmap(l.getWidth(), l.getHeight(), Bitmap.Config.ARGB_4444);
+            Canvas canvas = new Canvas(bitmap);
+            l.draw(canvas);
+            addDrawable(priority, key, bitmap);
+        }
+    }
+
+    public interface FontDrawableKeyChooser {
+        FontDrawableKeyChooser DEFAULT = new FontDrawableKeyChooser() {
+            @Override
+            public String choose(char c) {
+                return String.valueOf(c);
+            }
+        };
+
+        String choose(char c);
+
+        class Prefix implements FontDrawableKeyChooser {
+            public final String prefix;
+
+            public Prefix(String prefix) {
+                this.prefix = prefix;
+            }
+
+            @Override
+            public String choose(char c) {
+                return prefix + c;
+            }
+        }
     }
 
     public static final class Filter implements FractCoder.Encodable {
@@ -115,7 +170,6 @@ public class FractResourcesDef {
 
         public Drawable() {
         }
-
 
     }
 }
