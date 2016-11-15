@@ -159,7 +159,7 @@ public abstract class FractEngine {
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.fract_logo, options);
-            FractResourcesDef.Drawable drawable = new FractResourcesDef.Drawable(0, bitmap, drawableKey);
+            FractResourcesDef.Drawable drawable = new FractResourcesDef.Drawable(0, drawableKey, bitmap);
             return new FractResourcesDef(drawable);
         }
 
@@ -208,6 +208,12 @@ public abstract class FractEngine {
         }
 
         private void setScreen(FractScreen screen) {
+            if (screen != null)
+                for (Pointer p : pointers)
+                    if (p.pressed) {
+                        this.screen.inputListener.onTouchCancelled();
+                        break;
+                    }
             this.screen = screen;
             cancel();
         }
@@ -358,8 +364,15 @@ public abstract class FractEngine {
                     currentScreen.set(width, height);
                 }
                 inputHandler.fire();
-                FractColor.RGB c = currentScreen.clearColor;
-                GLES20.glClearColor(c.r, c.g, c.b, c.a);
+                FractColor c = currentScreen.clearColor;
+                if (c instanceof FractColor.RGB) {
+                    FractColor.RGB cRGB = (FractColor.RGB) c;
+                    GLES20.glClearColor(cRGB.r, cRGB.g, cRGB.b, cRGB.a);
+                } else {
+                    int cPacked = c.packInt();
+                    GLES20.glClearColor(FractColor.getR(cPacked), FractColor.getG(cPacked), FractColor.getB(cPacked), c.a);
+                }
+
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                 long actualTime = System.nanoTime();
                 float deltaTime = (float) (actualTime - time) * FractMath.NANO_TO_SECONDS;
