@@ -28,7 +28,7 @@ class FractBatch {
     private static final String FRAGMENT_SHADER_SOURCE;
     private static final float DEFAULT_COLOR_PACKED = FractColor.packFloat(FractColor.WHITE);
     private static final float[] SCREEN_MAP_VERTICES;
-    private static final FractResourcesDef.Filter FBO_FILTER = new FractResourcesDef.Filter(FractResourcesDef.Filter.Type.NEAREST, FractResourcesDef.Filter.Type.NEAREST);
+    private static final FractResourcesDef.Filter FBO_FILTER = new FractResourcesDef.Filter(false, false);
 
     static {
         VERTEX_SHADER_SOURCE =

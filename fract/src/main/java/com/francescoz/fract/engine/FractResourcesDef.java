@@ -1,6 +1,8 @@
 package com.francescoz.fract.engine;
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 
 import com.francescoz.fract.utils.FractCoder;
@@ -34,8 +36,12 @@ public class FractResourcesDef {
             addDrawable(drawableDef);
     }
 
-    public void addDrawable(int priority, Bitmap bitmap, String key) {
-        addDrawable(new Drawable(priority, bitmap, key));
+    public void addDrawable(int priority, String key, Resources resources, int drawableResID, BitmapFactory.Options options) {
+        addDrawable(priority, key, BitmapFactory.decodeResource(resources, drawableResID, options));
+    }
+
+    public void addDrawable(int priority, String key, Bitmap bitmap) {
+        addDrawable(new Drawable(priority, key, bitmap));
     }
 
     Drawable[] getDrawables() {
@@ -45,7 +51,7 @@ public class FractResourcesDef {
     }
 
     public static final class Filter implements FractCoder.Encodable {
-        public static final Filter DEFAULT = new Filter(Type.NEAREST, Type.NEAREST);
+        public static final Filter DEFAULT = new Filter(false, false);
         public static final FractCoder.Decoder<Filter> DECODER = new FractCoder.Decoder<Filter>() {
             @Override
             public Filter decode(FractCoder.Node node) {
@@ -56,9 +62,9 @@ public class FractResourcesDef {
         final int magFilter;
         final boolean generateMipmaps;
 
-        public Filter(Type minFilter, Type mipmapMinFilter, Type magFilter) {
-            this.minFilter = resolveFilter(mipmapMinFilter, minFilter);
-            this.magFilter = resolveFilter(magFilter);
+        public Filter(boolean minInterpolation, boolean magInterpolation, boolean mipmapInterpolation) {
+            this.minFilter = resolveFilter(minInterpolation, mipmapInterpolation);
+            this.magFilter = resolveFilter(magInterpolation);
             generateMipmaps = true;
         }
 
@@ -68,46 +74,20 @@ public class FractResourcesDef {
             this.generateMipmaps = generateMipmaps;
         }
 
-        public Filter(Type minFilter, Type magFilter) {
-            this.minFilter = resolveFilter(minFilter);
-            this.magFilter = resolveFilter(magFilter);
+        public Filter(boolean minInterpolation, boolean magInterpolation) {
+            this.minFilter = resolveFilter(minInterpolation);
+            this.magFilter = resolveFilter(magInterpolation);
             generateMipmaps = false;
         }
 
-        private int resolveFilter(Type filterType) {
-            switch (filterType) {
-                case NEAREST:
-                    return GLES20.GL_NEAREST;
-                case LINEAR:
-                    return GLES20.GL_LINEAR;
-                default:
-                    throw new RuntimeException("Unknown Type");
-            }
+        private int resolveFilter(boolean interpolation) {
+            return interpolation ? GLES20.GL_LINEAR : GLES20.GL_NEAREST;
         }
 
-        private int resolveFilter(Type mipmapFilterType, Type filterType) {
-            switch (mipmapFilterType) {
-                case NEAREST:
-                    switch (filterType) {
-                        case NEAREST:
-                            return GLES20.GL_NEAREST_MIPMAP_NEAREST;
-                        case LINEAR:
-                            return GLES20.GL_NEAREST_MIPMAP_LINEAR;
-                        default:
-                            throw new RuntimeException("Unknown Type");
-                    }
-                case LINEAR:
-                    switch (filterType) {
-                        case NEAREST:
-                            return GLES20.GL_LINEAR_MIPMAP_NEAREST;
-                        case LINEAR:
-                            return GLES20.GL_LINEAR_MIPMAP_LINEAR;
-                        default:
-                            throw new RuntimeException("Unknown Type");
-                    }
-                default:
-                    throw new RuntimeException("Unknown mipmap Type");
-            }
+        private int resolveFilter(boolean interpolation, boolean mipmapInterpolation) {
+            if (mipmapInterpolation)
+                return interpolation ? GLES20.GL_LINEAR_MIPMAP_LINEAR : GLES20.GL_LINEAR_MIPMAP_NEAREST;
+            return interpolation ? GLES20.GL_NEAREST_MIPMAP_LINEAR : GLES20.GL_NEAREST_MIPMAP_NEAREST;
         }
 
         @Override
@@ -119,10 +99,6 @@ public class FractResourcesDef {
             return n;
         }
 
-        public enum Type {
-            NEAREST, LINEAR
-        }
-
     }
 
     public static class Drawable {
@@ -131,7 +107,7 @@ public class FractResourcesDef {
         public Bitmap bitmap;
         public String key;
 
-        public Drawable(int priority, Bitmap bitmap, String key) {
+        public Drawable(int priority, String key, Bitmap bitmap) {
             this.priority = priority;
             this.bitmap = bitmap;
             this.key = key;

@@ -9,13 +9,13 @@ import com.francescoz.fract.utils.FractMatrix;
 import com.francescoz.fract.utils.FractOrigin;
 import com.francescoz.fract.utils.FractSizing;
 
-public abstract class FractScreen implements FractCoder.Codable {
+public abstract class FractScreen {
 
-    public final FractColor.RGB clearColor;
     public final Viewport viewport;
+    public FractColor clearColor;
     public FractInput.Listener inputListener;
 
-    public FractScreen(FractColor.RGB clearColor, Viewport viewport, FractInput.Listener inputListener) {
+    public FractScreen(FractColor clearColor, Viewport viewport, FractInput.Listener inputListener) {
         this.clearColor = clearColor;
         this.viewport = viewport;
         this.inputListener = inputListener;
@@ -49,19 +49,6 @@ public abstract class FractScreen implements FractCoder.Codable {
         this(new FractColor.RGB(), new Viewport());
     }
 
-    @Override
-    public FractCoder.Node encode() {
-        FractCoder.Node n = new FractCoder.Node();
-        n.putEncodable("clearColor", clearColor);
-        n.putEncodable("viewport", viewport);
-        return n;
-    }
-
-    @Override
-    public void decode(FractCoder.Node node) {
-        node.decode("clearColor", clearColor);
-        node.decode("viewport", viewport);
-    }
 
     protected abstract void render(FractEngine.Drawer drawer, float deltaTime);
 

@@ -23,8 +23,20 @@ public abstract class FractColor implements FractCoder.Codable {
         a = 1;
     }
 
-    public static final float packFloat(int color) {
-        return Float.intBitsToFloat(color);
+    public static float getR(int color) {
+        return Color.red(color) / 255.0f;
+    }
+
+    public static float getG(int color) {
+        return Color.green(color) / 255.0f;
+    }
+
+    public static float getB(int color) {
+        return Color.blue(color) / 255.0f;
+    }
+
+    public static final float packFloat(int c) {
+        return Float.intBitsToFloat((c & 0xFF00FF00) | ((c & 0x00FF0000) >> 16) | ((c & 0x000000FF) << 16));
     }
 
     public abstract int packInt();
@@ -40,7 +52,7 @@ public abstract class FractColor implements FractCoder.Codable {
     }
 
     public final float packFloat() {
-        return Float.intBitsToFloat(packInt() & 0xfeffffff);
+        return packFloat(packInt());
     }
 
     public abstract void set(int color);
