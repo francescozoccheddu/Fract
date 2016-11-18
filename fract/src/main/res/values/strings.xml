@@ -1,3 +1,4 @@
 <resources>
-    <string name="splash"><b>Fract</b> Library v0.3 <i>(Alpha Build)</i>\nby <b>Francesco Zoccheddu</b>\nfz.francescoz@gmail.com</string>
+    <string name="splash_prefix"><b>Fract</b> Library v</string>
+    <string name="splash_suffix"> <i>(Alpha Build)</i>\nby <b>Francesco Zoccheddu</b>\nfz.francescoz@gmail.com</string>
 </resources>
