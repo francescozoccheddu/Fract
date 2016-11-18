@@ -5,8 +5,8 @@
     android:layout_gravity="center"
     android:background="@drawable/splash_background"
     android:gravity="center"
-    android:padding="@dimen/splash_background_padding"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:padding="@dimen/splash_background_padding">
 
     <ImageView
         android:id="@+id/splash_icon"
@@ -17,10 +17,10 @@
         android:src="@drawable/splash_icon" />
 
     <TextView
+        android:id="@+id/splash_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="@string/splash"
         android:textColor="@color/splash_foreground"
         android:textSize="@dimen/splash_text" />
 </LinearLayout>

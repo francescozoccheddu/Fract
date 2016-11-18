@@ -3,19 +3,23 @@ package com.francescoz.fract.engine;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.francescoz.fract.BuildConfig;
 import com.francescoz.fract.R;
 import com.francescoz.fract.utils.FractColor;
 import com.francescoz.fract.utils.FractInput;
@@ -54,6 +58,9 @@ public abstract class FractEngine {
     private static final void splash(final Context context) {
         Toast t = new Toast(context);
         LinearLayout layout = (LinearLayout) LayoutInflater.from(context).inflate(R.layout.splash, null);
+        Resources r = context.getResources();
+        CharSequence text = TextUtils.concat(r.getText(R.string.splash_prefix), BuildConfig.VERSION_NAME, r.getText(R.string.splash_suffix));
+        ((TextView) layout.findViewById(R.id.splash_text)).setText(text);
         final View icon = layout.findViewById(R.id.splash_icon);
         icon.post(new Runnable() {
             @Override
