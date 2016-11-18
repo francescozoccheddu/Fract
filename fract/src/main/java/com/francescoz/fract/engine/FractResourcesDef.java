@@ -32,9 +32,11 @@ public class FractResourcesDef {
     }
 
     public void addDrawable(Drawable drawableDef) {
+        if (drawableDef.key == null)
+            throw new RuntimeException("Drawable key cannot be null");
         for (Drawable d : drawableDefs)
             if (d.key.equals(drawableDef.key))
-                throw new RuntimeException("Key already exists");
+                throw new RuntimeException("Drawable key already exists");
         drawableDefs.add(drawableDef);
     }
 
@@ -43,66 +45,10 @@ public class FractResourcesDef {
             addDrawable(drawableDef);
     }
 
-    public void addDrawable(int priority, String key, Resources resources, int drawableResID, BitmapFactory.Options options) {
-        addDrawable(priority, key, BitmapFactory.decodeResource(resources, drawableResID, options));
-    }
-
-    public void addDrawable(int priority, String key, Bitmap bitmap) {
-        addDrawable(new Drawable(priority, key, bitmap));
-    }
-
     Drawable[] getDrawables() {
         Drawable[] array = new Drawable[drawableDefs.size()];
         drawableDefs.toArray(array);
         return array;
-    }
-
-    public void addFont(int priority, FontDrawableKeyChooser keyChooser, String chars, int size, Typeface typeface) {
-        addFont(priority, keyChooser, chars.toCharArray(), size, typeface);
-    }
-
-    public void addFont(int priority, FontDrawableKeyChooser keyChooser, char[] chars, int size, Typeface typeface) {
-        TextPaint paint = new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
-        paint.setColor(Color.WHITE);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrikeThruText(false);
-        paint.setStrokeWidth(0);
-        paint.setTypeface(typeface);
-        paint.setTextSize(size);
-        paint.setTextAlign(Paint.Align.LEFT);
-        for (char c : chars) {
-            String text = String.valueOf(c);
-            StaticLayout l = new StaticLayout(text, paint, size, Layout.Alignment.ALIGN_NORMAL, 0, 0, false);
-            String key = keyChooser.choose(c);
-            Bitmap bitmap = Bitmap.createBitmap(l.getWidth(), l.getHeight(), Bitmap.Config.ARGB_4444);
-            Canvas canvas = new Canvas(bitmap);
-            l.draw(canvas);
-            addDrawable(priority, key, bitmap);
-        }
-    }
-
-    public interface FontDrawableKeyChooser {
-        FontDrawableKeyChooser DEFAULT = new FontDrawableKeyChooser() {
-            @Override
-            public String choose(char c) {
-                return String.valueOf(c);
-            }
-        };
-
-        String choose(char c);
-
-        class Prefix implements FontDrawableKeyChooser {
-            public final String prefix;
-
-            public Prefix(String prefix) {
-                this.prefix = prefix;
-            }
-
-            @Override
-            public String choose(char c) {
-                return prefix + c;
-            }
-        }
     }
 
     public static final class Filter implements FractCoder.Encodable {
@@ -156,20 +102,213 @@ public class FractResourcesDef {
 
     }
 
-    public static class Drawable {
+    public static class FontDrawable extends Drawable {
+
+        private final StaticLayout layout;
+        private final int width;
+
+        public FontDrawable(String text, TextPaint paint) {
+            layout = new StaticLayout(text, paint, Integer.MAX_VALUE, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+            width = (int) Math.ceil(paint.measureText(text));
+        }
+
+        public FontDrawable(int priority, String key, String text, int size, Typeface typeface) {
+            this(text, size, typeface);
+            super.priority = priority;
+            super.key = key;
+        }
+
+        public FontDrawable(String text, int size, Typeface typeface) {
+            this(text, createPaint(size, typeface));
+        }
+
+        private static TextPaint createPaint(int size, Typeface typeface) {
+            TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.LINEAR_TEXT_FLAG);
+            textPaint.setColor(Color.WHITE);
+            textPaint.setStrokeWidth(0);
+            textPaint.setShadowLayer(0, 0, 0, Color.TRANSPARENT);
+            textPaint.setTextSize(size);
+            textPaint.setTextAlign(Paint.Align.LEFT);
+            textPaint.setStyle(Paint.Style.FILL);
+            textPaint.setTypeface(typeface);
+            textPaint.setStrikeThruText(false);
+            return textPaint;
+        }
+
+        public static FontDrawable[] create(String[] texts, int size, Typeface typeface) {
+            TextPaint textPaint = createPaint(size, typeface);
+            int len = texts.length;
+            FontDrawable[] drawables = new FontDrawable[len];
+            for (int i = 0; i < len; i++)
+                drawables[i] = new FontDrawable(texts[i], textPaint);
+            return drawables;
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            layout.draw(canvas);
+        }
+
+        @Override
+        public int getWidth() {
+            return width;
+        }
+
+        @Override
+        public int getHeight() {
+            return layout.getHeight();
+        }
+    }
+
+    public static class CircleDrawable extends PaintDrawable {
+
+        public CircleDrawable(int priority, String key, int radius) {
+            super(priority, key, radius, radius);
+        }
+
+        public CircleDrawable(int radius) {
+            super(radius, radius);
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            float c = width / 2.0f;
+            canvas.drawCircle(c, c, c, paint);
+        }
+    }
+
+    public static abstract class PaintDrawable extends Drawable {
+        protected final Paint paint;
+        protected final int width, height;
+
+        public PaintDrawable(int priority, String key, int width, int height) {
+            super(priority, key);
+            this.width = width;
+            this.height = height;
+            this.paint = createPaint();
+        }
+
+        public PaintDrawable(int width, int height) {
+            this.width = width;
+            this.height = height;
+            this.paint = createPaint();
+        }
+
+        private static Paint createPaint() {
+            Paint paint = new Paint();
+            paint.setColor(Color.WHITE);
+            return paint;
+        }
+
+        @Override
+        public final int getWidth() {
+            return width;
+        }
+
+        @Override
+        public final int getHeight() {
+            return height;
+        }
+    }
+
+    public static class RectDrawable extends Drawable {
+        public RectDrawable(int priority, String key) {
+            super(priority, key);
+        }
+
+        public RectDrawable() {
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            canvas.drawColor(Color.WHITE);
+        }
+
+        @Override
+        public int getWidth() {
+            return 2;
+        }
+
+        @Override
+        public int getHeight() {
+            return 2;
+        }
+    }
+
+    public static class BitmapDrawable extends Drawable {
+
+        private static final BitmapFactory.Options DEFAULT_OPTIONS;
+
+        static {
+            DEFAULT_OPTIONS = new BitmapFactory.Options();
+            DEFAULT_OPTIONS.inScaled = true;
+        }
+
+        private final Bitmap bitmap;
+
+        public BitmapDrawable(int priority, String key, Resources resources, int drawableResId) {
+            this(resources, drawableResId);
+            super.priority = priority;
+            super.key = key;
+        }
+
+        public BitmapDrawable(Resources resources, int drawableResId) {
+            this(resources, drawableResId, DEFAULT_OPTIONS);
+        }
+
+        public BitmapDrawable(int priority, String key, Resources resources, int drawableResId, BitmapFactory.Options options) {
+            this(resources, drawableResId, options);
+            super.priority = priority;
+            super.key = key;
+        }
+
+        public BitmapDrawable(Resources resources, int drawableResId, BitmapFactory.Options options) {
+            this(BitmapFactory.decodeResource(resources, drawableResId, options));
+        }
+
+        public BitmapDrawable(int priority, String key, Bitmap bitmap) {
+            super(priority, key);
+            this.bitmap = bitmap;
+        }
+
+        public BitmapDrawable(Bitmap bitmap) {
+            this.bitmap = bitmap;
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            canvas.drawBitmap(bitmap, 0, 0, null);
+        }
+
+        @Override
+        public int getWidth() {
+            return bitmap.getWidth();
+        }
+
+        @Override
+        public int getHeight() {
+            return bitmap.getHeight();
+        }
+    }
+
+    public static abstract class Drawable {
 
         public int priority;
-        public Bitmap bitmap;
         public String key;
 
-        public Drawable(int priority, String key, Bitmap bitmap) {
+        public Drawable(int priority, String key) {
             this.priority = priority;
-            this.bitmap = bitmap;
             this.key = key;
         }
 
         public Drawable() {
         }
+
+        public abstract void draw(Canvas canvas);
+
+        public abstract int getWidth();
+
+        public abstract int getHeight();
 
     }
 }

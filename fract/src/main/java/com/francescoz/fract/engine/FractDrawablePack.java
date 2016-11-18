@@ -108,17 +108,15 @@ class FractDrawablePack {
         ArrayList<Candidate> candidateList = new ArrayList<>();
         for (FractResourcesDef.Drawable drawableDef : drawableDefs) {
             candidateList.add(new Candidate(drawableDef, false));
-            if (drawableDef.bitmap.getHeight() != drawableDef.bitmap.getWidth())
+            if (drawableDef.getHeight() != drawableDef.getWidth())
                 candidateList.add(new Candidate(drawableDef, true));
         }
         Collections.sort(candidateList, Candidate.HEIGHT_COMPARATOR);
         Candidate[] candidates = new Candidate[candidateList.size()];
         candidateList.toArray(candidates);
         int area = 0;
-        for (FractResourcesDef.Drawable drawableDef : drawableDefs) {
-            Bitmap bitmap = drawableDef.bitmap;
-            area += bitmap.getWidth() * bitmap.getHeight();
-        }
+        for (FractResourcesDef.Drawable drawableDef : drawableDefs)
+            area += drawableDef.getWidth() * drawableDef.getHeight();
         int exp = (int) Math.ceil(Math.log(area) * FractMath.TO_LOG2 / 2.0);
         int size = 0;
         PackedBitmap[] packedBitmaps = null;
@@ -235,11 +233,11 @@ class FractDrawablePack {
         }
 
         int getWidth() {
-            return rotated ? drawableDef.bitmap.getHeight() : drawableDef.bitmap.getWidth();
+            return rotated ? drawableDef.getHeight() : drawableDef.getWidth();
         }
 
         int getHeight() {
-            return rotated ? drawableDef.bitmap.getWidth() : drawableDef.bitmap.getHeight();
+            return rotated ? drawableDef.getWidth() : drawableDef.getHeight();
         }
 
         boolean shouldSkip(ArrayList<PackedBitmap> packedBitmaps) {
@@ -307,23 +305,26 @@ class FractDrawablePack {
 
     private static final class PackedBitmap extends PackedDrawable {
         private static final Matrix MATRIX = new Matrix();
-        private final Bitmap bitmap;
+        private final FractResourcesDef.Drawable drawable;
 
         private PackedBitmap(FractResourcesDef.Drawable drawableDef, int x, int y, boolean rotated) {
-            super(drawableDef.key, x, y, drawableDef.bitmap.getWidth(), drawableDef.bitmap.getHeight(), rotated);
-            this.bitmap = drawableDef.bitmap;
+            super(drawableDef.key, x, y, drawableDef.getWidth(), drawableDef.getHeight(), rotated);
+            this.drawable = drawableDef;
         }
 
         void draw(Canvas canvas) {
             MATRIX.reset();
             if (rotated) {
-                MATRIX.setTranslate(-bitmap.getWidth(), 0);
+                MATRIX.setTranslate(-drawable.getWidth(), 0);
                 MATRIX.postRotate(-90);
             }
             MATRIX.postTranslate(topLeftVertex.x, topLeftVertex.y);
-            canvas.drawBitmap(bitmap, MATRIX, null);
+            canvas.save();
+            canvas.clipRect(topLeftVertex.x, topLeftVertex.y, bottomRightVertex.x, bottomRightVertex.y);
+            canvas.concat(MATRIX);
+            drawable.draw(canvas);
+            canvas.restore();
         }
-
 
     }
 }

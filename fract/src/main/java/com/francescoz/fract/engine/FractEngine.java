@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PixelFormat;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
@@ -159,7 +160,7 @@ public abstract class FractEngine {
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.fract_logo, options);
-            FractResourcesDef.Drawable drawable = new FractResourcesDef.Drawable(0, drawableKey, bitmap);
+            FractResourcesDef.Drawable drawable = new FractResourcesDef.BitmapDrawable(0, drawableKey, bitmap);
             return new FractResourcesDef(drawable);
         }
 
@@ -317,9 +318,21 @@ public abstract class FractEngine {
         private Surface(Context context, boolean halfColor, boolean alpha) {
             super(context);
             halfBits = halfColor;
-            int bits = halfColor ? 4 : 8;
-            setEGLConfigChooser(bits, bits, bits, alpha ? bits : 0, 0, 0);
             setEGLContextClientVersion(2);
+            if (alpha) {
+                setZOrderOnTop(true);
+                getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                if (halfColor)
+                    setEGLConfigChooser(4, 4, 4, 4, 0, 0);
+                else
+                    setEGLConfigChooser(8, 8, 8, 8, 0, 0);
+            } else {
+                getHolder().setFormat(PixelFormat.OPAQUE);
+                if (halfColor)
+                    setEGLConfigChooser(4, 4, 4, 0, 0, 0);
+                else
+                    setEGLConfigChooser(8, 8, 8, 0, 0, 0);
+            }
             setRenderer(new Renderer());
             setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
             inputHandler = new InputHandler();
