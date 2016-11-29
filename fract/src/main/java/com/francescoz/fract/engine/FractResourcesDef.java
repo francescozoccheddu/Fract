@@ -20,6 +20,7 @@ public class FractResourcesDef {
 
     private final ArrayList<Drawable> drawableDefs;
     public Filter filter;
+    public boolean recreateOnResolutionChange;
 
     public FractResourcesDef(Drawable... drawableDefs) {
         this();

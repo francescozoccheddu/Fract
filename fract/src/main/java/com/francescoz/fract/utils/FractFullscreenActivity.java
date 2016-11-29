@@ -24,7 +24,7 @@ public abstract class FractFullscreenActivity extends Activity {
         super.onCreate(savedInstanceState);
         engine = new FractEngine(this, config) {
             @Override
-            protected FractResourcesDef createResources() {
+            protected FractResourcesDef createResources(FractPixel resolution) {
                 return FractFullscreenActivity.this.createResources();
             }
         };

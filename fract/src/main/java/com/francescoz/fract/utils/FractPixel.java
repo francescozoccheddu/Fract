@@ -17,6 +17,17 @@ public class FractPixel implements FractCoder.Encodable {
         this.y = y;
     }
 
+    public boolean equals(FractPixel pixel) {
+        return pixel.x == x && pixel.y == y;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof FractVec)
+            return equals((FractPixel) obj);
+        return false;
+    }
+
     @Override
     public FractCoder.Node encode() {
         FractCoder.Node n = new FractCoder.Node();

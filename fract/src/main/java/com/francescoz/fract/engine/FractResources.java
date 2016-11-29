@@ -7,6 +7,7 @@ import android.opengl.GLUtils;
 import android.util.Log;
 
 import com.francescoz.fract.utils.FractCoder;
+import com.francescoz.fract.utils.FractPixel;
 import com.francescoz.fract.utils.FractVec;
 
 import java.io.BufferedOutputStream;
@@ -36,7 +37,9 @@ class FractResources {
             return o1.key.compareTo(o2.key);
         }
     };
-    private static final String CODER_TAG = "fractresourcesv1";
+    private static final String CODER_TAG = "fractresourcesv0.41";
+    final boolean recreateOnResolutionChange;
+    final FractPixel packingResolution;
     private final Texture[] textures;
     private final Drawable[] drawables;
     private final String[] keys;
@@ -64,6 +67,8 @@ class FractResources {
         keys = new String[len];
         for (int i = 0; i < len; i++)
             keys[i] = drawables[i].key;
+        this.recreateOnResolutionChange = packedResourceDef.recreateOnResolutionChange;
+        packingResolution = packedResourceDef.resolution;
     }
 
     private static int getMaxTextureSize() {
@@ -72,7 +77,7 @@ class FractResources {
         return maxTextureSize[0];
     }
 
-    static FractResources load(File file) {
+    static FractResources load(File file, FractPixel resolution) {
         try {
             if (file.isFile() && file.canRead()) {
                 FileInputStream fileInputStream = new FileInputStream(file);
@@ -103,33 +108,37 @@ class FractResources {
                     int maxTextureSize = getMaxTextureSize();
                     int maxTextureCacheSize = root.integerData.get("maxTextureSize");
                     FractResourcesDef.Filter filter = root.getEncodable("filter", FractResourcesDef.Filter.DECODER);
-                    FractCoder.Node packsNode = root.nodeData.get("packs");
-                    Set<Map.Entry<String, FractCoder.Node>> packNodeSet = packsNode.nodeData.getEntrySet();
-                    FractDrawablePack packs[] = new FractDrawablePack[packNodeSet.size()];
-                    if (maxTextureCacheSize < maxTextureSize) {
-                        if (packs.length > 1)
-                            return null;
-                    } else if (maxTextureCacheSize > maxTextureSize) {
-                        for (FractDrawablePack pack : packs) {
-                            Bitmap bitmap = pack.bitmap;
-                            if (bitmap.getWidth() > maxTextureSize || bitmap.getHeight() > maxTextureSize)
+                    boolean recreateOnResolutionChange = root.booleanData.get("recreateOnResChange");
+                    FractPixel cacheResolution = root.getEncodable("createdOnRes", FractPixel.DECODER);
+                    if (!recreateOnResolutionChange || cacheResolution.equals(resolution)) {
+                        FractCoder.Node packsNode = root.nodeData.get("packs");
+                        Set<Map.Entry<String, FractCoder.Node>> packNodeSet = packsNode.nodeData.getEntrySet();
+                        FractDrawablePack packs[] = new FractDrawablePack[packNodeSet.size()];
+                        if (maxTextureCacheSize < maxTextureSize) {
+                            if (packs.length > 1)
                                 return null;
+                        } else if (maxTextureCacheSize > maxTextureSize) {
+                            for (FractDrawablePack pack : packs) {
+                                Bitmap bitmap = pack.bitmap;
+                                if (bitmap.getWidth() > maxTextureSize || bitmap.getHeight() > maxTextureSize)
+                                    return null;
+                            }
                         }
-                    }
-                    int packIndex = 0;
-                    for (Map.Entry<String, FractCoder.Node> entry : packNodeSet) {
-                        File bitmapFile = fileMap.get(entry.getKey());
-                        Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
-                        Collection<FractCoder.Node> drawableNodeSet = entry.getValue().nodeData.getValuesSet();
-                        FractDrawablePack.PackedDrawable[] packedDrawables = new FractDrawablePack.PackedDrawable[drawableNodeSet.size()];
-                        int drawableIndex = 0;
-                        for (FractCoder.Node drawableNode : drawableNodeSet) {
-                            FractDrawablePack.PackedDrawable drawable = FractDrawablePack.PackedDrawable.DECODER.decode(drawableNode);
-                            packedDrawables[drawableIndex++] = drawable;
+                        int packIndex = 0;
+                        for (Map.Entry<String, FractCoder.Node> entry : packNodeSet) {
+                            File bitmapFile = fileMap.get(entry.getKey());
+                            Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile.getAbsolutePath());
+                            Collection<FractCoder.Node> drawableNodeSet = entry.getValue().nodeData.getValuesSet();
+                            FractDrawablePack.PackedDrawable[] packedDrawables = new FractDrawablePack.PackedDrawable[drawableNodeSet.size()];
+                            int drawableIndex = 0;
+                            for (FractCoder.Node drawableNode : drawableNodeSet) {
+                                FractDrawablePack.PackedDrawable drawable = FractDrawablePack.PackedDrawable.DECODER.decode(drawableNode);
+                                packedDrawables[drawableIndex++] = drawable;
+                            }
+                            packs[packIndex++] = new FractDrawablePack(packedDrawables, bitmap);
                         }
-                        packs[packIndex++] = new FractDrawablePack(packedDrawables, bitmap);
+                        return new FractResources(new PackedResourceDef(packs, cacheResolution, filter, recreateOnResolutionChange));
                     }
-                    return new FractResources(new PackedResourceDef(packs, filter));
                 }
             }
         } catch (Exception e) {
@@ -140,9 +149,9 @@ class FractResources {
         return null;
     }
 
-    static FractResources createAndSave(FractResourcesDef resourcesDef, boolean halfBits, File file) throws IOException {
+    static FractResources createAndSave(FractResourcesDef resourcesDef, FractPixel resolution, boolean halfBits, File file) throws IOException {
         int maxTextureSize = getMaxTextureSize();
-        PackedResourceDef packedResourceDef = new PackedResourceDef(resourcesDef, maxTextureSize, halfBits);
+        PackedResourceDef packedResourceDef = new PackedResourceDef(resourcesDef, resolution, maxTextureSize, halfBits);
         FractResources resources = new FractResources(packedResourceDef);
         file.createNewFile();
         FractCoder.Node packsNode = new FractCoder.Node();
@@ -163,6 +172,8 @@ class FractResources {
         FractCoder coder = new FractCoder();
         FractCoder.Node rootNode = coder.getNodeRoot();
         rootNode.stringData.put("coderTag", CODER_TAG);
+        rootNode.putEncodable("createdOnRes", resolution);
+        rootNode.booleanData.put("recreateOnResChange", resourcesDef.recreateOnResolutionChange);
         rootNode.integerData.put("maxTextureSize", maxTextureSize);
         rootNode.putEncodable("filter", packedResourceDef.filter);
         rootNode.nodeData.put("packs", packsNode);
@@ -176,8 +187,8 @@ class FractResources {
         return resources;
     }
 
-    static FractResources create(FractResourcesDef resourcesDef, boolean halfBits) {
-        return new FractResources(new PackedResourceDef(resourcesDef, getMaxTextureSize(), halfBits));
+    static FractResources create(FractResourcesDef resourcesDef, FractPixel resolution, boolean halfBits) {
+        return new FractResources(new PackedResourceDef(resourcesDef, resolution, getMaxTextureSize(), halfBits));
     }
 
     void destroy() {
@@ -201,23 +212,29 @@ class FractResources {
         private final FractDrawablePack[] drawablePacks;
         private final FractResourcesDef.Filter filter;
         private final int drawableCount;
+        private final FractPixel resolution;
+        private final boolean recreateOnResolutionChange;
 
-        private PackedResourceDef(FractResourcesDef resourcesDef, int maxTextureSize, boolean halfBits) {
+        private PackedResourceDef(FractResourcesDef resourcesDef, FractPixel resolution, int maxTextureSize, boolean halfBits) {
             drawablePacks = FractDrawablePack.splitAndPack(resourcesDef.getDrawables(), maxTextureSize, 4, halfBits);
             filter = resourcesDef.filter;
             int drawableCount = 0;
             for (FractDrawablePack pack : drawablePacks)
                 drawableCount += pack.packedDrawables.length;
             this.drawableCount = drawableCount;
+            this.recreateOnResolutionChange = resourcesDef.recreateOnResolutionChange;
+            this.resolution = resolution;
         }
 
-        private PackedResourceDef(FractDrawablePack[] drawablePacks, FractResourcesDef.Filter filter) {
+        private PackedResourceDef(FractDrawablePack[] drawablePacks, FractPixel resolution, FractResourcesDef.Filter filter, boolean recreateOnResolutionChange) {
             this.drawablePacks = drawablePacks;
             this.filter = filter;
             int drawableCount = 0;
             for (FractDrawablePack pack : drawablePacks)
                 drawableCount += pack.packedDrawables.length;
             this.drawableCount = drawableCount;
+            this.recreateOnResolutionChange = recreateOnResolutionChange;
+            this.resolution = resolution;
         }
     }
 
