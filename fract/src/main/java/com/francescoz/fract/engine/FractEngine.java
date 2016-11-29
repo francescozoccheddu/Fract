@@ -439,6 +439,27 @@ public abstract class FractEngine {
             batch.draw(drawable, currentScreen.viewport, sprite.color, sprite.transform, sprite.sizing, sprite.horizontalOrigin, sprite.verticalOrigin);
         }
 
+
+        public final void draw(String drawableKey, FractTransform transform, FractOrigin horizontalOrigin, FractOrigin verticalOrigin) {
+            draw(drawableKey, null, transform, null, horizontalOrigin, verticalOrigin);
+        }
+
+        public final void draw(String drawableKey, FractTransform transform) {
+            draw(drawableKey, null, transform, null, null, null);
+        }
+
+        public final void draw(String drawableKey, FractTransform transform, FractSizing sizing) {
+            draw(drawableKey, null, transform, sizing, null, null);
+        }
+
+        public final void draw(String drawableKey, FractColor color, FractTransform transform) {
+            draw(drawableKey, color, transform, null, null, null);
+        }
+
+        public final void draw(String drawableKey, FractColor color, FractTransform transform, FractSizing sizing) {
+            draw(drawableKey, color, transform, sizing, null, null);
+        }
+
         public final void draw(String drawableKey, FractColor color, FractTransform transform, FractSizing sizing, FractOrigin horizontalOrigin, FractOrigin verticalOrigin) {
             validate();
             batch.draw(resources.getDrawable(drawableKey), currentScreen.viewport, color, transform, sizing, horizontalOrigin, verticalOrigin);
