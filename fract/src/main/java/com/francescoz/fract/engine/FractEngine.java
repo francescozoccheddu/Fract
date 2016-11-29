@@ -25,6 +25,7 @@ import com.francescoz.fract.utils.FractColor;
 import com.francescoz.fract.utils.FractInput;
 import com.francescoz.fract.utils.FractMath;
 import com.francescoz.fract.utils.FractOrigin;
+import com.francescoz.fract.utils.FractPixel;
 import com.francescoz.fract.utils.FractSizing;
 import com.francescoz.fract.utils.FractTransform;
 import com.francescoz.fract.utils.FractVec;
@@ -108,12 +109,13 @@ public abstract class FractEngine {
         return surface;
     }
 
-    private final void reloadResources() {
+    private final void reloadResources(int w, int h) {
         if (resources != null) resources.destroy();
+        FractPixel resolution = new FractPixel(w, h);
         if (hasDiskCache()) {
-            if ((resources = FractResources.load(diskCache)) == null) {
+            if ((resources = FractResources.load(diskCache, resolution)) == null) {
                 try {
-                    resources = FractResources.createAndSave(createResources(), surface.halfBits, diskCache);
+                    resources = FractResources.createAndSave(createResources(resolution), resolution, surface.halfBits, diskCache);
                     Log.d("FractEngine", "Resources successfully created and written to file");
                 } catch (IOException e) {
                     if (diskCache != null) diskCache.delete();
@@ -122,11 +124,11 @@ public abstract class FractEngine {
             } else
                 Log.d("FractEngine", "Resources successfully loaded from file");
         } else {
-            resources = FractResources.create(createResources(), surface.halfBits);
+            resources = FractResources.create(createResources(resolution), resolution, surface.halfBits);
         }
     }
 
-    protected abstract FractResourcesDef createResources();
+    protected abstract FractResourcesDef createResources(FractPixel resolution);
 
     public static final class Test extends FractEngine {
 
@@ -174,7 +176,7 @@ public abstract class FractEngine {
         }
 
         @Override
-        protected FractResourcesDef createResources() {
+        protected FractResourcesDef createResources(FractPixel resolution) {
             return loadDefaultDrawable(context, "logo");
         }
     }
@@ -353,6 +355,7 @@ public abstract class FractEngine {
             private final Drawer drawer;
             private long time;
             private int width, height;
+            private boolean mustReload;
 
             Renderer() {
                 drawer = hasMask() ? new MaskDrawer() : new Drawer();
@@ -360,13 +363,21 @@ public abstract class FractEngine {
 
             @Override
             public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-                reloadResources();
+                mustReload = true;
                 batch.create();
                 time = System.nanoTime();
             }
 
             @Override
             public void onSurfaceChanged(GL10 gl10, int width, int height) {
+                if (mustReload) {
+                    mustReload = false;
+                    reloadResources(width, height);
+                } else if (resources.recreateOnResolutionChange) {
+                    FractPixel cacheResolution = resources.packingResolution;
+                    if (width != cacheResolution.x || height != cacheResolution.y)
+                        reloadResources(width, height);
+                }
                 this.width = width;
                 this.height = height;
                 if (hasMask())
@@ -378,6 +389,10 @@ public abstract class FractEngine {
 
             @Override
             public void onDrawFrame(GL10 gl10) {
+                if (mustReload) {
+                    mustReload = false;
+                    reloadResources(width, height);
+                }
                 if (nextScreen != null) {
                     currentScreen.hide();
                     currentScreen = nextScreen;
