@@ -123,9 +123,8 @@ public abstract class FractEngine {
                 }
             } else
                 Log.d("FractEngine", "Resources successfully loaded from file");
-        } else {
+        } else
             resources = FractResources.create(createResources(resolution), resolution, surface.halfBits);
-        }
     }
 
     protected abstract FractResourcesDef createResources(FractPixel resolution);
