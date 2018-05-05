@@ -2,6 +2,14 @@ package com.francescoz.fract.utils;
 
 public final class FractMatrix implements FractCoder.Codable {
 
+    public static final FractCoder.Decoder<FractMatrix> DECODER = new FractCoder.Decoder<FractMatrix>() {
+        @Override
+        public FractMatrix decode(FractCoder.Node node) {
+            FractMatrix matrix = new FractMatrix();
+            matrix.decode(node);
+            return matrix;
+        }
+    };
     private float m00, m01, m02, m10, m11, m12;
 
     public FractMatrix() {
@@ -17,8 +25,8 @@ public final class FractMatrix implements FractCoder.Codable {
     }
 
     public void concat(FractTransform transform) {
-        if (transform.parent != null) concat(transform.parent);
         concat(transform.translation, transform.rotation, transform.scale);
+        if (transform.parent != null) concat(transform.parent);
     }
 
     public void concat(FractVec translation, float rotation, FractVec scale) {
@@ -110,13 +118,4 @@ public final class FractMatrix implements FractCoder.Codable {
         n.floatData.put("m12", m12);
         return n;
     }
-
-    public static final FractCoder.Decoder<FractMatrix> DECODER = new FractCoder.Decoder<FractMatrix>() {
-        @Override
-        public FractMatrix decode(FractCoder.Node node) {
-            FractMatrix matrix = new FractMatrix();
-            matrix.decode(node);
-            return matrix;
-        }
-    };
 }

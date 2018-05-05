@@ -38,7 +38,6 @@ import javax.microedition.khronos.opengles.GL10;
 
 public abstract class FractEngine {
 
-    private static final String FRANCESCOZ_PACKAGE = "com.francescoz.";
     private final FractBatch batch;
     private final File diskCache;
     private final Surface surface;
@@ -58,11 +57,10 @@ public abstract class FractEngine {
     }
 
     private static final void splash(final Context context) {
-        if (context.getPackageName().startsWith(FRANCESCOZ_PACKAGE)) return;
         Toast t = new Toast(context);
         LinearLayout layout = (LinearLayout) LayoutInflater.from(context).inflate(R.layout.splash, null);
         Resources r = context.getResources();
-        CharSequence text = TextUtils.concat(r.getText(R.string.splash_prefix), BuildConfig.VERSION_NAME, r.getText(R.string.splash_suffix));
+        CharSequence text = TextUtils.concat(r.getText(R.string.splash_prefix), BuildConfig.VERSION_NAME, " ", r.getText(R.string.splash_suffix));
         ((TextView) layout.findViewById(R.id.splash_text)).setText(text);
         final View icon = layout.findViewById(R.id.splash_icon);
         icon.post(new Runnable() {
