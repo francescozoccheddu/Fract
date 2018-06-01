@@ -13,7 +13,6 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
-
 class FractBatch {
 
     private static final int POSITION_ATTRIB_LOC = 0;
